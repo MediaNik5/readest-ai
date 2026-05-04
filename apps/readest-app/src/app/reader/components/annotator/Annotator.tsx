@@ -47,6 +47,7 @@ import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
 import ExportMarkdownDialog from './ExportMarkdownDialog';
+import AskAIPopup from './AskAIPopup';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -85,11 +86,13 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
+  const [showAskAIPopup, setShowAskAIPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
   const [annotPopupPosition, setAnnotPopupPosition] = useState<Position>();
   const [dictPopupPosition, setDictPopupPosition] = useState<Position>();
   const [translatorPopupPosition, setTranslatorPopupPosition] = useState<Position>();
   const [proofreadPopupPosition, setProofreadPopupPosition] = useState<Position>();
+  const [askAIPopupPosition, setAskAIPopupPosition] = useState<Position>();
   const [highlightOptionsVisible, setHighlightOptionsVisible] = useState(false);
   const [showAnnotationNotes, setShowAnnotationNotes] = useState(false);
   const [annotationNotes, setAnnotationNotes] = useState<BookNote[]>([]);
@@ -114,7 +117,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const deferredQuickActionRef = useRef(createDeferredActionState());
 
   const showingPopup =
-    showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup;
+    showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup || showAskAIPopup;
 
   const popupPadding = useResponsiveSize(10);
   const trianglePadding = popupPadding * 2 + 6;
@@ -126,6 +129,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const transPopupHeight = Math.min(265, maxHeight);
   const proofreadPopupWidth = Math.min(440, maxWidth);
   const proofreadPopupHeight = Math.min(200, maxHeight);
+  const askAIPopupWidth = Math.min(480, maxWidth);
+  const askAIPopupHeight = Math.min(400, maxHeight);
   const annotPopupWidth = Math.min(useResponsiveSize(300), maxWidth);
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
@@ -169,11 +174,19 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       proofreadPopupHeight,
       popupPadding,
     );
+    const askAIPopupPos = getPopupPosition(
+      triangPos,
+      rect,
+      askAIPopupWidth,
+      askAIPopupHeight,
+      popupPadding,
+    );
     if (triangPos.point.x == 0 || triangPos.point.y == 0) return;
     setAnnotPopupPosition(annotPopupPos);
     setDictPopupPosition(dictPopupPos);
     setTranslatorPopupPosition(transPopupPos);
     setProofreadPopupPosition(proofreadPopupPos);
+    setAskAIPopupPosition(askAIPopupPos);
     setTrianglePosition(triangPos);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection, bookKey, viewSettings.vertical]);
@@ -215,6 +228,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setShowDictionaryPopup(false);
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);
+      setShowAskAIPopup(false);
       setEditingAnnotation(null);
     }, 500),
     [],
@@ -575,11 +589,19 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         proofreadPopupHeight,
         popupPadding,
       );
+      const askAIPopupPos = getPopupPosition(
+        triangPos,
+        rect,
+        askAIPopupWidth,
+        askAIPopupHeight,
+        popupPadding,
+      );
       if (triangPos.point.x == 0 || triangPos.point.y == 0) return;
       setAnnotPopupPosition(annotPopupPos);
       setDictPopupPosition(dictPopupPos);
       setTranslatorPopupPosition(transPopupPos);
       setProofreadPopupPosition(proofreadPopupPos);
+      setAskAIPopupPosition(askAIPopupPos);
       setTrianglePosition(triangPos);
 
       const { enableAnnotationQuickActions, annotationQuickAction } = viewSettings;
@@ -805,6 +827,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
   };
 
+  const handleAskAI = () => {
+    if (!selection || !selection.text) return;
+    setShowAnnotPopup(false);
+    setShowAskAIPopup(true);
+  };
+
   const handleStartEditAnnotation = useCallback(() => {
     setShowAnnotPopup(false);
   }, []);
@@ -954,6 +982,16 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           onClick: handleProofread,
           disabled: bookData.book?.format !== 'EPUB',
         };
+      case 'ask-ai':
+        return {
+          tooltipText: _(label),
+          Icon,
+          onClick: handleAskAI,
+          disabled:
+            bookData.book?.format !== 'EPUB' ||
+            !config.sofusionBookId ||
+            config.sofusionBookId === 'skipped',
+        };
       default:
         return { tooltipText: '', Icon, onClick: () => {} };
     }
@@ -1008,6 +1046,17 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           trianglePosition={trianglePosition}
           popupWidth={proofreadPopupWidth}
           popupHeight={proofreadPopupHeight}
+          onDismiss={handleDismissPopupAndSelection}
+        />
+      )}
+      {showAskAIPopup && trianglePosition && askAIPopupPosition && selection && (
+        <AskAIPopup
+          bookKey={bookKey}
+          selection={selection}
+          position={askAIPopupPosition}
+          trianglePosition={trianglePosition}
+          popupWidth={askAIPopupWidth}
+          popupHeight={askAIPopupHeight}
           onDismiss={handleDismissPopupAndSelection}
         />
       )}
