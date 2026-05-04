@@ -9,7 +9,7 @@ const getBaseUrl = (): string => {
 };
 
 export interface BookUploadResponse {
-  bookId: number;
+  id: number;
   title: string;
   author: string | null;
   filename: string;

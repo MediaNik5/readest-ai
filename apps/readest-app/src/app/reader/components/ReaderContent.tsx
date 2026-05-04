@@ -124,8 +124,8 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
         if (
           bookData.book.format === 'EPUB' &&
-          !config.sofusionBookId &&
-          config.sofusionBookId !== 'skipped'
+          ((!config.sofusionBookId &&
+          config.sofusionBookId !== 'skipped') || config.sofusionBookId === '6')
         ) {
           console.log('[Sofusion] Showing upload dialog for:', bookData.book.title);
           setUploadDialogBookKey(key);
@@ -311,10 +311,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       if (config) {
         const updatedConfig = {
           ...config,
-          sofusionBookId: String(response.bookId),
+          sofusionBookId: String(response.id),
         };
-        console.log('[Sofusion] Saving config with sofusionBookId:', String(response.bookId));
-        setConfig(uploadDialogBookKey, { sofusionBookId: String(response.bookId) });
+        console.log('[Sofusion] Saving config with sofusionBookId:', String(response.id));
+        setConfig(uploadDialogBookKey, { sofusionBookId: String(response.id) });
         await saveConfig(envConfig, uploadDialogBookKey, updatedConfig, settings);
       }
 
