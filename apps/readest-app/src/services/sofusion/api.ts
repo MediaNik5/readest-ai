@@ -1,8 +1,8 @@
 const getBaseUrl = (): string => {
-  let url = process.env.NEXT_PUBLIC_SOFUSION_API_URL;
+  const url = process.env['NEXT_PUBLIC_SOFUSION_API_URL'];
   console.log('[Sofusion] NEXT_PUBLIC_SOFUSION_API_URL:', url);
   if (!url) {
-    url = 'http://localhost:8080';
+    return 'http://localhost:8080';
     // throw new Error('NEXT_PUBLIC_SOFUSION_API_URL is not configured');
   }
   return url.replace(/\/+$/, '');
@@ -33,15 +33,52 @@ export interface AskResponse {
   message: string | null;
 }
 
+export interface Series {
+  id: number;
+  name: string;
+  description: string | null;
+  books?: Array<{
+    id: number;
+    title: string;
+    author: string | null;
+    seriesOrder: number;
+  }>;
+}
+
+export interface CreateSeriesRequest {
+  name: string;
+  description?: string;
+}
+
+export interface CreateSeriesResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  message: string;
+}
+
+export interface UpdateBookSeriesRequest {
+  seriesId: number;
+  seriesOrder: number;
+}
+
 export async function uploadBook(
   file: File | Blob,
   fileName: string,
   userId: number,
+  seriesId?: number | null,
+  seriesOrder?: number | null,
 ): Promise<BookUploadResponse> {
   const baseUrl = getBaseUrl();
   const formData = new FormData();
   formData.append('file', file, fileName);
   formData.append('userId', String(userId));
+  if (seriesId !== undefined && seriesId !== null) {
+    formData.append('seriesId', String(seriesId));
+  }
+  if (seriesOrder !== undefined && seriesOrder !== null) {
+    formData.append('seriesOrder', String(seriesOrder));
+  }
 
   let response: Response;
   try {
@@ -83,6 +120,59 @@ export async function askQuestion(bookId: number, request: AskRequest): Promise<
   if (!response.ok) {
     const body = await response.text();
     throw new Error(`Ask failed (${response.status}): ${body}`);
+  }
+
+  return response.json();
+}
+
+export async function listSeries(): Promise<Series[]> {
+  const baseUrl = getBaseUrl();
+
+  const response = await fetch(`${baseUrl}/api/series`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`List series failed (${response.status}): ${body}`);
+  }
+
+  return response.json();
+}
+
+export async function createSeries(request: CreateSeriesRequest): Promise<CreateSeriesResponse> {
+  const baseUrl = getBaseUrl();
+
+  const response = await fetch(`${baseUrl}/api/series`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Create series failed (${response.status}): ${body}`);
+  }
+
+  return response.json();
+}
+
+export async function updateBookSeries(
+  bookId: number,
+  request: UpdateBookSeriesRequest,
+): Promise<{ message: string }> {
+  const baseUrl = getBaseUrl();
+
+  const response = await fetch(`${baseUrl}/api/books/${bookId}/series`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Update book series failed (${response.status}): ${body}`);
   }
 
   return response.json();

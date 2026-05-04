@@ -20,6 +20,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   CopyIcon,
+  LayersIcon,
   PencilIcon,
   RefreshCwIcon,
   SquareIcon,
@@ -42,6 +43,11 @@ interface ThreadProps {
   onResetIndex?: () => void;
   isLoadingHistory?: boolean;
   hasActiveConversation?: boolean;
+  seriesContext?: {
+    seriesId: number;
+    seriesName: string;
+    seriesOrder: number;
+  } | null;
 }
 
 const LoadingOverlay: FC<{ isVisible: boolean }> = ({ isVisible }) => {
@@ -105,6 +111,7 @@ export const Thread: FC<ThreadProps> = ({
   onResetIndex,
   isLoadingHistory = false,
   hasActiveConversation = false,
+  seriesContext = null,
 }) => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
@@ -164,6 +171,12 @@ export const Thread: FC<ThreadProps> = ({
       {!hasActiveConversation && (
         <ThreadPrimitive.Empty>
           <div className='animate-in fade-in flex h-full flex-col items-center justify-center duration-300'>
+            {seriesContext && (
+              <SeriesContextIndicator
+                seriesName={seriesContext.seriesName}
+                seriesOrder={seriesContext.seriesOrder}
+              />
+            )}
             <div className='bg-base-content/10 mb-4 rounded-full p-3'>
               <BookOpenIcon className='text-base-content size-6' />
             </div>
@@ -183,6 +196,14 @@ export const Thread: FC<ThreadProps> = ({
             showLoading ? 'opacity-0' : 'opacity-100',
           )}
         >
+          {seriesContext && (
+            <div className='px-1 pt-2'>
+              <SeriesContextIndicator
+                seriesName={seriesContext.seriesName}
+                seriesOrder={seriesContext.seriesOrder}
+              />
+            </div>
+          )}
           <ThreadPrimitive.Viewport
             ref={viewportRef}
             autoScroll={false}
@@ -210,6 +231,21 @@ export const Thread: FC<ThreadProps> = ({
         <Composer onClear={onClear} onResetIndex={onResetIndex} />
       </AssistantIf>
     </ThreadPrimitive.Root>
+  );
+};
+
+const SeriesContextIndicator: FC<{ seriesName: string; seriesOrder: number }> = ({
+  seriesName,
+  seriesOrder,
+}) => {
+  return (
+    <div className='bg-primary/10 border-primary/20 mb-2 flex items-center gap-2 rounded-lg border px-3 py-2'>
+      <LayersIcon className='text-primary h-4 w-4 shrink-0' />
+      <p className='text-primary text-[11px] leading-tight'>
+        <span className='font-medium'>Series context:</span> AI includes this book (Book{' '}
+        {seriesOrder}) and previous books in the "{seriesName}" series
+      </p>
+    </div>
   );
 };
 

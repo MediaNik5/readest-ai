@@ -421,6 +421,11 @@ export interface BookConfig {
   // Sofusion AI backend book ID — null = not uploaded, 'skipped' = user declined
   sofusionBookId?: string | null;
 
+  // Sofusion series information
+  sofusionSeriesId?: number | null;
+  sofusionSeriesOrder?: number | null;
+  sofusionSeriesName?: string | null;
+
   updatedAt: number;
 }
 

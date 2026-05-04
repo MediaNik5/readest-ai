@@ -76,6 +76,7 @@ const AIAssistantChat = ({
   authorName,
   currentPage,
   onResetIndex,
+  seriesContext,
 }: {
   aiSettings: AISettings;
   bookHash: string;
@@ -83,6 +84,14 @@ const AIAssistantChat = ({
   authorName: string;
   currentPage: number;
   onResetIndex: () => void;
+  seriesContext:
+    | {
+        seriesId: number;
+        seriesName: string;
+        seriesOrder: number;
+      }
+    | null
+    | undefined;
 }) => {
   const {
     activeConversationId,
@@ -160,6 +169,7 @@ const AIAssistantChat = ({
       onResetIndex={onResetIndex}
       isLoadingHistory={isLoadingHistory}
       hasActiveConversation={!!activeConversationId}
+      seriesContext={seriesContext}
     />
   );
 };
@@ -170,12 +180,21 @@ const AIAssistantWithRuntime = ({
   onResetIndex,
   isLoadingHistory,
   hasActiveConversation,
+  seriesContext,
 }: {
   adapter: NonNullable<ReturnType<typeof createTauriAdapter>>;
   historyAdapter?: ThreadHistoryAdapter;
   onResetIndex: () => void;
   isLoadingHistory: boolean;
   hasActiveConversation: boolean;
+  seriesContext:
+    | {
+        seriesId: number;
+        seriesName: string;
+        seriesOrder: number;
+      }
+    | null
+    | undefined;
 }) => {
   const runtime = useLocalRuntime(adapter, {
     adapters: historyAdapter ? { history: historyAdapter } : undefined,
@@ -189,6 +208,7 @@ const AIAssistantWithRuntime = ({
         onResetIndex={onResetIndex}
         isLoadingHistory={isLoadingHistory}
         hasActiveConversation={hasActiveConversation}
+        seriesContext={seriesContext}
       />
     </AssistantRuntimeProvider>
   );
@@ -198,10 +218,19 @@ const ThreadWrapper = ({
   onResetIndex,
   isLoadingHistory,
   hasActiveConversation,
+  seriesContext,
 }: {
   onResetIndex: () => void;
   isLoadingHistory: boolean;
   hasActiveConversation: boolean;
+  seriesContext:
+    | {
+        seriesId: number;
+        seriesName: string;
+        seriesOrder: number;
+      }
+    | null
+    | undefined;
 }) => {
   const [sources, setSources] = useState(getLastSources());
   const assistantRuntime = useAssistantRuntime();
@@ -228,6 +257,7 @@ const ThreadWrapper = ({
       onResetIndex={onResetIndex}
       isLoadingHistory={isLoadingHistory}
       hasActiveConversation={hasActiveConversation}
+      seriesContext={seriesContext || null}
     />
   );
 };
@@ -236,9 +266,10 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { getBookData } = useBookDataStore();
+  const { getBookData, getConfig } = useBookDataStore();
   const { getProgress } = useReaderStore();
   const bookData = getBookData(bookKey);
+  const config = getConfig(bookKey);
   const progress = getProgress(bookKey);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -251,6 +282,16 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   const authorName = bookData?.book?.author || '';
   const currentPage = progress?.pageinfo?.current ?? 0;
   const aiSettings = settings?.aiSettings;
+
+  // Get series context from config
+  const seriesContext =
+    config?.sofusionSeriesId && config.sofusionSeriesName
+      ? {
+          seriesId: config.sofusionSeriesId,
+          seriesName: config.sofusionSeriesName,
+          seriesOrder: config.sofusionSeriesOrder || 1,
+        }
+      : null;
 
   // check if book is indexed on mount
   useEffect(() => {
@@ -358,6 +399,7 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
       authorName={authorName}
       currentPage={currentPage}
       onResetIndex={handleResetIndex}
+      seriesContext={seriesContext}
     />
   );
 };

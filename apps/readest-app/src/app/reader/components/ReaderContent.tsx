@@ -30,6 +30,7 @@ import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 import { BookDetailModal } from '@/components/metadata';
 import { uploadBook } from '@/services/sofusion/api';
 import SofusionUploadDialog from '@/components/SofusionUploadDialog';
+import { type SeriesSelection } from '@/components/SofusionSeriesSelector';
 
 import useBooksManager from '../hooks/useBooksManager';
 import useBookShortcuts from '../hooks/useBookShortcuts';
@@ -125,7 +126,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
         if (
           bookData.book.format === 'EPUB' &&
           ((!config.sofusionBookId && config.sofusionBookId !== 'skipped') ||
-            config.sofusionBookId === '8')
+            config.sofusionBookId === '3')
         ) {
           console.log('[Sofusion] Showing upload dialog for:', bookData.book.title);
           setUploadDialogBookKey(key);
@@ -261,8 +262,13 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     navigateToLibrary(router, '', undefined, true);
   };
 
-  const handleUploadBook = async () => {
-    console.log('[Sofusion] handleUploadBook called. uploadDialogBookKey:', uploadDialogBookKey);
+  const handleUploadBook = async (seriesSelection?: SeriesSelection) => {
+    console.log(
+      '[Sofusion] handleUploadBook called. uploadDialogBookKey:',
+      uploadDialogBookKey,
+      'seriesSelection:',
+      seriesSelection,
+    );
     if (!uploadDialogBookKey) return;
     const bookData = getBookData(uploadDialogBookKey);
     console.log('[Sofusion] handleUploadBook bookData:', {
@@ -298,13 +304,23 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
         bookData.file.type,
         'userId:',
         userId,
+        'seriesId:',
+        seriesSelection?.seriesId,
+        'seriesOrder:',
+        seriesSelection?.seriesOrder,
       );
       // NativeFile/RemoteFile extend File but construct with empty blob —
       // must read full content into a real Blob before passing to FormData
       const arrayBuffer = await bookData.file.arrayBuffer();
       const fileBlob = new Blob([arrayBuffer], { type: 'application/epub+zip' });
       console.log('[Sofusion] Read file into blob, size:', fileBlob.size);
-      const response = await uploadBook(fileBlob, fileName, userId);
+      const response = await uploadBook(
+        fileBlob,
+        fileName,
+        userId,
+        seriesSelection?.seriesId,
+        seriesSelection?.seriesOrder,
+      );
       console.log('[Sofusion] Upload response:', response);
 
       const config = getConfig(uploadDialogBookKey);
@@ -312,16 +328,28 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
         const updatedConfig = {
           ...config,
           sofusionBookId: String(response.id),
+          sofusionSeriesId: seriesSelection?.seriesId ?? null,
+          sofusionSeriesOrder: seriesSelection?.seriesOrder ?? null,
+          sofusionSeriesName: seriesSelection?.seriesName ?? null,
         };
         console.log('[Sofusion] Saving config with sofusionBookId:', String(response.id));
-        setConfig(uploadDialogBookKey, { sofusionBookId: String(response.id) });
+        setConfig(uploadDialogBookKey, {
+          sofusionBookId: String(response.id),
+          sofusionSeriesId: seriesSelection?.seriesId ?? null,
+          sofusionSeriesOrder: seriesSelection?.seriesOrder ?? null,
+          sofusionSeriesName: seriesSelection?.seriesName ?? null,
+        });
         await saveConfig(envConfig, uploadDialogBookKey, updatedConfig, settings);
       }
 
       setShowUploadDialog(false);
       eventDispatcher.dispatch('toast', {
         type: 'info',
-        message: _('Book uploaded for AI Q&A'),
+        message: seriesSelection?.seriesId
+          ? _('Book uploaded to series "{{seriesName}}"', {
+              seriesName: seriesSelection.seriesName,
+            })
+          : _('Book uploaded for AI Q&A'),
         timeout: 3000,
       });
     } catch (err) {

@@ -14,7 +14,7 @@ function getStoredUserId(): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function storeUserId(id: number): void {
+function _storeUserId(id: number): void {
   localStorage.setItem(SOFUSION_USER_ID_KEY, String(id));
 }
 
@@ -94,8 +94,8 @@ export function useSofusionUpload(bookKey: string): SofusionUploadState {
 
       if (!mounted.current) return;
 
-      const newId = String(response.bookId);
-      setSofusionBookId(response.bookId);
+      const newId = String(response.id);
+      setSofusionBookId(response.id);
       setStatus('uploaded');
 
       const config = getConfig(bookKey);
