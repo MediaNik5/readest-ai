@@ -418,6 +418,9 @@ export interface BookConfig {
   // Per-book switch for hardcover exports in reader menu.
   hardcoverSyncEnabled?: boolean;
 
+  // Sofusion AI backend book ID — null = not uploaded, 'skipped' = user declined
+  sofusionBookId?: string | null;
+
   updatedAt: number;
 }
 
