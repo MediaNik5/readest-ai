@@ -17,6 +17,24 @@ interface AskAIPopupProps {
   popupHeight: number;
   onDismiss: () => void;
 }
+export const normalizeCfi = (cfi: string): string => {
+  if (!cfi) return '';
+
+  // 1. Remove epubcfi() wrapper
+  const clean = cfi.replace(/^epubcfi\(|\)$/g, '');
+
+  // 2. Split by commas
+  const parts = clean.split(',');
+
+  // If it's not a range (no commas), parts[0] is our only path.
+  // If it is a range, parts[0] is the common parent and parts[1] is the start.
+  let fullPath = parts.length > 1 ? parts[0]! + parts[1]! : (parts[0] ?? '');
+
+  // 3. Cleanup logic:
+  return fullPath
+    .replace(/:.*$/, '') // Remove character offset (e.g., :0)
+    .replace(/\/\d*[13579]$/, ''); // Remove trailing odd numbers (text node indices)
+};
 
 const AskAIPopup: React.FC<AskAIPopupProps> = ({
   bookKey,
@@ -70,6 +88,12 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
       setError(_('Invalid book ID: ' + sofusionBookId));
       return;
     }
+    let cfi = selection?.cfi;
+    if (cfi == undefined) {
+      setError(_('There is no selection'));
+      return;
+    }
+    cfi = normalizeCfi(cfi);
 
     const rawUserId = localStorage.getItem('sofusionUserId');
     const userId = rawUserId ? Number(rawUserId) : 1;
@@ -82,7 +106,8 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
       const response = await askQuestion(bookId, {
         userId,
         question: questionText,
-        cfi: selection?.cfi,
+        cfi: cfi,
+        selectedText: selection?.text,
         expandDetails: false,
       });
 

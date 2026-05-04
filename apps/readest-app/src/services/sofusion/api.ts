@@ -24,6 +24,7 @@ export interface AskRequest {
   question: string;
   expandDetails?: boolean;
   cfi?: string;
+  selectedText?: string;
 }
 
 export interface AskResponse {
