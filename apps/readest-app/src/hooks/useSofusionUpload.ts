@@ -14,9 +14,9 @@ function getStoredUserId(): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function _storeUserId(id: number): void {
-  localStorage.setItem(SOFUSION_USER_ID_KEY, String(id));
-}
+// function _storeUserId(id: number): void {
+//   localStorage.setItem(SOFUSION_USER_ID_KEY, String(id));
+// }
 
 export type UploadStatus = 'idle' | 'uploading' | 'uploaded' | 'error' | 'skipped';
 

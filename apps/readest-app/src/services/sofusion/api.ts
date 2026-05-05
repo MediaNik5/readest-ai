@@ -2,7 +2,7 @@ const getBaseUrl = (): string => {
   const url = process.env['NEXT_PUBLIC_SOFUSION_API_URL'];
   console.log('[Sofusion] NEXT_PUBLIC_SOFUSION_API_URL:', url);
   if (!url) {
-    return 'http://localhost:8080';
+    return 'https://sofusion.online/';
     // throw new Error('NEXT_PUBLIC_SOFUSION_API_URL is not configured');
   }
   return url.replace(/\/+$/, '');
