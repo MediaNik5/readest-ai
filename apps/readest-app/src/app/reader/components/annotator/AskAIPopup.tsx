@@ -52,6 +52,7 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
   const [answer, setAnswer] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandDetails, setExpandDetails] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const responseRef = useRef<HTMLDivElement>(null);
@@ -67,12 +68,6 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
-
-  useEffect(() => {
-    if (responseRef.current) {
-      responseRef.current.scrollTop = responseRef.current.scrollHeight;
-    }
-  }, [answer]);
 
   const handleSubmit = async (questionText: string) => {
     if (!questionText.trim() || isLoading) return;
@@ -108,7 +103,7 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
         question: questionText,
         cfi: cfi,
         selectedText: selection?.text,
-        expandDetails: false,
+        expandDetails,
       });
 
       if (response.message && response.message.includes('error')) {
@@ -163,31 +158,44 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
           )}
 
           {/* Input */}
-          <div className='flex items-center gap-2'>
-            <input
-              ref={inputRef}
-              type='text'
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={_('Ask a question...')}
-              disabled={isLoading}
-              className={clsx(
-                'w-full flex-1 rounded-md p-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-0',
-                'not-eink:bg-gray-600 not-eink:text-white eink:border eink:border-base-content',
-              )}
-            />
-            <button
-              onClick={() => handleSubmit(question)}
-              disabled={!question.trim() || isLoading}
-              className={clsx(
-                'btn btn-sm btn-ghost btn-primary text-blue-600',
-                'bg-transparent hover:bg-transparent disabled:bg-transparent',
-                'disabled:text-base-content/75 disabled:opacity-75',
-              )}
-            >
-              {isLoading ? <span className='loading loading-spinner loading-xs'></span> : _('Ask')}
-            </button>
+          <div className='flex flex-col gap-2'>
+            <div className='flex items-center gap-2'>
+              <input
+                ref={inputRef}
+                type='text'
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={_('Ask a question...')}
+                disabled={isLoading}
+                className={clsx(
+                  'w-full flex-1 rounded-md p-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-0',
+                  'not-eink:bg-gray-600 not-eink:text-white eink:border eink:border-base-content',
+                )}
+              />
+              <button
+                onClick={() => handleSubmit(question)}
+                disabled={!question.trim() || isLoading}
+                className={clsx(
+                  'btn btn-sm btn-ghost btn-primary text-blue-600',
+                  'bg-transparent hover:bg-transparent disabled:bg-transparent',
+                  'disabled:text-base-content/75 disabled:opacity-75',
+                )}
+              >
+                {isLoading ? <span className='loading loading-spinner loading-xs'></span> : _('Ask')}
+              </button>
+            </div>
+            {/* Expand Details Toggle */}
+            <label className='flex items-center gap-2 text-xs text-gray-400'>
+              <input
+                type='checkbox'
+                checked={expandDetails}
+                onChange={(e) => setExpandDetails(e.target.checked)}
+                disabled={isLoading}
+                className='checkbox checkbox-xs'
+              />
+              <span>{_('Expand details (more comprehensive answers)')}</span>
+            </label>
           </div>
 
           {/* Error */}
@@ -197,7 +205,15 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
           {answer && (
             <div
               ref={responseRef}
-              className='max-h-60 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-gray-200'
+              className='max-h-60 overflow-y-auto text-sm leading-relaxed text-gray-200 break-words'
+              style={{
+                scrollbarWidth: 'auto',
+                scrollbarColor: '#4b5563 #374151',
+                WebkitScrollbarWidth: '8px',
+                WebkitScrollbarTrack: '#374151',
+                WebkitScrollbarThumb: '#4b5563',
+                WebkitScrollbarThumbHover: '#6b7280',
+              }}
             >
               {answer}
             </div>

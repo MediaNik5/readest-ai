@@ -1,3 +1,5 @@
+const REQUEST_TIMEOUT = 60_000; // 60 seconds
+
 const getBaseUrl = (): string => {
   const url = process.env['NEXT_PUBLIC_SOFUSION_API_URL'];
   console.log('[Sofusion] NEXT_PUBLIC_SOFUSION_API_URL:', url);
@@ -80,13 +82,22 @@ export async function uploadBook(
     formData.append('seriesOrder', String(seriesOrder));
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
   let response: Response;
   try {
     response = await fetch(`${baseUrl}/api/books/upload`, {
       method: 'POST',
       body: formData,
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
   } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('Upload request timed out after 60 seconds');
+    }
     const message = err instanceof TypeError ? err.message : String(err);
     throw new Error(
       `Cannot reach server at ${baseUrl}. ` +
@@ -111,11 +122,25 @@ export async function uploadBook(
 export async function askQuestion(bookId: number, request: AskRequest): Promise<AskResponse> {
   const baseUrl = getBaseUrl();
 
-  const response = await fetch(`${baseUrl}/api/books/${bookId}/ask`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/api/books/${bookId}/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('Request timed out after 60 seconds');
+    }
+    throw err;
+  }
 
   if (!response.ok) {
     const body = await response.text();
@@ -128,10 +153,24 @@ export async function askQuestion(bookId: number, request: AskRequest): Promise<
 export async function listSeries(): Promise<Series[]> {
   const baseUrl = getBaseUrl();
 
-  const response = await fetch(`${baseUrl}/api/series`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/api/series`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('Request timed out after 60 seconds');
+    }
+    throw err;
+  }
 
   if (!response.ok) {
     const body = await response.text();
@@ -144,11 +183,25 @@ export async function listSeries(): Promise<Series[]> {
 export async function createSeries(request: CreateSeriesRequest): Promise<CreateSeriesResponse> {
   const baseUrl = getBaseUrl();
 
-  const response = await fetch(`${baseUrl}/api/series`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/api/series`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('Request timed out after 60 seconds');
+    }
+    throw err;
+  }
 
   if (!response.ok) {
     const body = await response.text();
@@ -164,11 +217,25 @@ export async function updateBookSeries(
 ): Promise<{ message: string }> {
   const baseUrl = getBaseUrl();
 
-  const response = await fetch(`${baseUrl}/api/books/${bookId}/series`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/api/books/${bookId}/series`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('Request timed out after 60 seconds');
+    }
+    throw err;
+  }
 
   if (!response.ok) {
     const body = await response.text();
