@@ -125,8 +125,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
         if (
           bookData.book.format === 'EPUB' &&
-          ((!config.sofusionBookId && config.sofusionBookId !== 'skipped') ||
-            config.sofusionBookId === '3')
+          !config.sofusionBookId && config.sofusionBookId !== 'skipped'
         ) {
           console.log('[Sofusion] Showing upload dialog for:', bookData.book.title);
           setUploadDialogBookKey(key);
