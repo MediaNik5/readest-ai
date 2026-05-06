@@ -207,12 +207,8 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
               ref={responseRef}
               className='max-h-60 overflow-y-auto text-sm leading-relaxed text-gray-200 break-words'
               style={{
-                scrollbarWidth: 'auto',
+                scrollbarWidth: 'thin',
                 scrollbarColor: '#4b5563 #374151',
-                WebkitScrollbarWidth: '8px',
-                WebkitScrollbarTrack: '#374151',
-                WebkitScrollbarThumb: '#4b5563',
-                WebkitScrollbarThumbHover: '#6b7280',
               }}
             >
               {answer}
