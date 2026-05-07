@@ -107,13 +107,14 @@ export async function uploadBook(
   }
 
   if (!response.ok) {
-    let body: string;
+    let errorMessage: string;
     try {
-      body = await response.text();
+      const json = await response.json();
+      errorMessage = json.message ?? response.statusText;
     } catch {
-      body = response.statusText;
+      errorMessage = response.statusText;
     }
-    throw new Error(`Upload failed (${response.status}): ${body}`);
+    throw new Error(`Upload failed (${response.status}): ${errorMessage}`);
   }
 
   return response.json();
@@ -143,8 +144,14 @@ export async function askQuestion(bookId: number, request: AskRequest): Promise<
   }
 
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Ask failed (${response.status}): ${body}`);
+    let errorMessage: string;
+    try {
+      const json = await response.json();
+      errorMessage = json.message ?? response.statusText;
+    } catch {
+      errorMessage = response.statusText;
+    }
+    throw new Error(`Ask failed (${response.status}): ${errorMessage}`);
   }
 
   return response.json();
@@ -173,8 +180,14 @@ export async function listSeries(): Promise<Series[]> {
   }
 
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`List series failed (${response.status}): ${body}`);
+    let errorMessage: string;
+    try {
+      const json = await response.json();
+      errorMessage = json.message ?? response.statusText;
+    } catch {
+      errorMessage = response.statusText;
+    }
+    throw new Error(`List series failed (${response.status}): ${errorMessage}`);
   }
 
   return response.json();
@@ -204,8 +217,14 @@ export async function createSeries(request: CreateSeriesRequest): Promise<Create
   }
 
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Create series failed (${response.status}): ${body}`);
+    let errorMessage: string;
+    try {
+      const json = await response.json();
+      errorMessage = json.message ?? response.statusText;
+    } catch {
+      errorMessage = response.statusText;
+    }
+    throw new Error(`Create series failed (${response.status}): ${errorMessage}`);
   }
 
   return response.json();
@@ -238,8 +257,14 @@ export async function updateBookSeries(
   }
 
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Update book series failed (${response.status}): ${body}`);
+    let errorMessage: string;
+    try {
+      const json = await response.json();
+      errorMessage = json.message ?? response.statusText;
+    } catch {
+      errorMessage = response.statusText;
+    }
+    throw new Error(`Update book series failed (${response.status}): ${errorMessage}`);
   }
 
   return response.json();
