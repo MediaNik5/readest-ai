@@ -3,20 +3,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useSofusionAuthStore } from '@/store/sofusionAuthStore';
 import { uploadBook } from '@/services/sofusion/api';
-
-const SOFUSION_USER_ID_KEY = 'sofusionUserId';
-
-function getStoredUserId(): number | null {
-  const raw = localStorage.getItem(SOFUSION_USER_ID_KEY);
-  if (!raw) return null;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : null;
-}
-
-// function _storeUserId(id: number): void {
-//   localStorage.setItem(SOFUSION_USER_ID_KEY, String(id));
-// }
 
 export type UploadStatus = 'idle' | 'uploading' | 'uploaded' | 'error' | 'skipped';
 
@@ -32,6 +20,7 @@ export function useSofusionUpload(bookKey: string): SofusionUploadState {
   const { envConfig } = useEnv();
   const { getConfig, getBookData, setConfig, saveConfig } = useBookDataStore();
   const { settings } = useSettingsStore();
+  const { user } = useSofusionAuthStore();
 
   const [status, setStatus] = useState<UploadStatus>('idle');
   const [sofusionBookId, setSofusionBookId] = useState<number | null>(null);
@@ -78,9 +67,8 @@ export function useSofusionUpload(bookKey: string): SofusionUploadState {
       return;
     }
 
-    const userId = getStoredUserId();
-    if (!userId) {
-      setError('Sofusion user ID not configured. Set it in settings.');
+    if (!user) {
+      setError('Please log in to upload books to Sofusion.');
       setStatus('error');
       return;
     }
@@ -90,7 +78,7 @@ export function useSofusionUpload(bookKey: string): SofusionUploadState {
 
     try {
       const fileName = `${book.title || 'book'}.epub`;
-      const response = await uploadBook(bookData.file, fileName, userId);
+      const response = await uploadBook(bookData.file, fileName, user.userId);
 
       if (!mounted.current) return;
 
@@ -109,7 +97,7 @@ export function useSofusionUpload(bookKey: string): SofusionUploadState {
       setError(message);
       setStatus('error');
     }
-  }, [bookKey, envConfig, getConfig, getBookData, setConfig, saveConfig, settings]);
+  }, [bookKey, envConfig, getConfig, getBookData, setConfig, saveConfig, settings, user]);
 
   const skip = useCallback(
     (permanent: boolean) => {

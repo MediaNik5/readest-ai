@@ -19,6 +19,7 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { DropdownProvider } from '@/context/DropdownContext';
 import { CommandPaletteProvider, CommandPalette } from '@/components/command-palette';
 import AtmosphereOverlay from '@/components/AtmosphereOverlay';
+import SofusionAuthProvider from '@/components/SofusionAuthProvider';
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
   const { envConfig, appService } = useEnv();
@@ -69,17 +70,19 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
     <CSPostHogProvider>
       <AuthProvider>
-        <IconContext.Provider value={{ size: `${iconSize}px` }}>
-          <SyncProvider>
-            <DropdownProvider>
-              <CommandPaletteProvider>
-                {children}
-                <CommandPalette />
-                <AtmosphereOverlay />
-              </CommandPaletteProvider>
-            </DropdownProvider>
-          </SyncProvider>
-        </IconContext.Provider>
+        <SofusionAuthProvider>
+          <IconContext.Provider value={{ size: `${iconSize}px` }}>
+            <SyncProvider>
+              <DropdownProvider>
+                <CommandPaletteProvider>
+                  {children}
+                  <CommandPalette />
+                  <AtmosphereOverlay />
+                </CommandPaletteProvider>
+              </DropdownProvider>
+            </SyncProvider>
+          </IconContext.Provider>
+        </SofusionAuthProvider>
       </AuthProvider>
     </CSPostHogProvider>
   );

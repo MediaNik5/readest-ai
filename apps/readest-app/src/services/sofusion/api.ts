@@ -1,13 +1,18 @@
 const REQUEST_TIMEOUT = 60_000; // 60 seconds
 
-const getBaseUrl = (): string => {
+export const getSofusionBaseUrl = (): string => {
   const url = process.env['NEXT_PUBLIC_SOFUSION_API_URL'];
   console.log('[Sofusion] NEXT_PUBLIC_SOFUSION_API_URL:', url);
   if (!url) {
-    return 'https://sofusion.online';
+    return 'http://localhost:7593';
     // throw new Error('NEXT_PUBLIC_SOFUSION_API_URL is not configured');
   }
   return url.replace(/\/+$/, '');
+};
+
+const getAuthHeaders = (): Record<string, string> => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('sofusion_auth_token') : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 export interface BookUploadResponse {
@@ -71,7 +76,7 @@ export async function uploadBook(
   seriesId?: number | null,
   seriesOrder?: number | null,
 ): Promise<BookUploadResponse> {
-  const baseUrl = getBaseUrl();
+  const baseUrl = getSofusionBaseUrl();
   const formData = new FormData();
   formData.append('file', file, fileName);
   formData.append('userId', String(userId));
@@ -89,6 +94,7 @@ export async function uploadBook(
   try {
     response = await fetch(`${baseUrl}/api/books/upload`, {
       method: 'POST',
+      headers: getAuthHeaders(),
       body: formData,
       signal: controller.signal,
     });
@@ -121,7 +127,7 @@ export async function uploadBook(
 }
 
 export async function askQuestion(bookId: number, request: AskRequest): Promise<AskResponse> {
-  const baseUrl = getBaseUrl();
+  const baseUrl = getSofusionBaseUrl();
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
@@ -130,7 +136,7 @@ export async function askQuestion(bookId: number, request: AskRequest): Promise<
   try {
     response = await fetch(`${baseUrl}/api/books/${bookId}/ask`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
       signal: controller.signal,
     });
@@ -158,7 +164,7 @@ export async function askQuestion(bookId: number, request: AskRequest): Promise<
 }
 
 export async function listSeries(): Promise<Series[]> {
-  const baseUrl = getBaseUrl();
+  const baseUrl = getSofusionBaseUrl();
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
@@ -167,7 +173,7 @@ export async function listSeries(): Promise<Series[]> {
   try {
     response = await fetch(`${baseUrl}/api/series`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -194,7 +200,7 @@ export async function listSeries(): Promise<Series[]> {
 }
 
 export async function createSeries(request: CreateSeriesRequest): Promise<CreateSeriesResponse> {
-  const baseUrl = getBaseUrl();
+  const baseUrl = getSofusionBaseUrl();
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
@@ -203,7 +209,7 @@ export async function createSeries(request: CreateSeriesRequest): Promise<Create
   try {
     response = await fetch(`${baseUrl}/api/series`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
       signal: controller.signal,
     });
@@ -234,7 +240,7 @@ export async function updateBookSeries(
   bookId: number,
   request: UpdateBookSeriesRequest,
 ): Promise<{ message: string }> {
-  const baseUrl = getBaseUrl();
+  const baseUrl = getSofusionBaseUrl();
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
@@ -243,7 +249,7 @@ export async function updateBookSeries(
   try {
     response = await fetch(`${baseUrl}/api/books/${bookId}/series`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
       signal: controller.signal,
     });

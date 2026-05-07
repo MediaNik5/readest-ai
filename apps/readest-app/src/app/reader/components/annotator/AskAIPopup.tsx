@@ -1,12 +1,15 @@
 import clsx from 'clsx';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { FiLock } from 'react-icons/fi';
 
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useSofusionAuthStore } from '@/store/sofusionAuthStore';
 import { askQuestion } from '@/services/sofusion/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { generateSuggestedQuestions } from '@/utils/askAI';
 import { Position, TextSelection } from '@/utils/sel';
 import Popup from '@/components/Popup';
+import SofusionLoginDialog from '@/components/SofusionLoginDialog';
 
 interface AskAIPopupProps {
   bookKey: string;
@@ -47,12 +50,14 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
 }) => {
   const _ = useTranslation();
   const { getConfig } = useBookDataStore();
+  const { user, isAuthenticated } = useSofusionAuthStore();
 
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandDetails, setExpandDetails] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const responseRef = useRef<HTMLDivElement>(null);
@@ -72,6 +77,11 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
   const handleSubmit = async (questionText: string) => {
     if (!questionText.trim() || isLoading) return;
 
+    if (!isAuthenticated || !user) {
+      setShowLogin(true);
+      return;
+    }
+
     if (!sofusionBookId || sofusionBookId === 'skipped') {
       setError(_('Book not uploaded. Upload it first to use AI Q&A.'));
       return;
@@ -90,8 +100,7 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
     }
     cfi = normalizeCfi(cfi);
 
-    const rawUserId = localStorage.getItem('sofusionUserId');
-    const userId = rawUserId ? Number(rawUserId) : 1;
+    const userId = user.userId;
 
     setIsLoading(true);
     setError(null);
@@ -119,6 +128,13 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
     }
   };
 
+  const handleLoginSuccess = () => {
+    setShowLogin(false);
+    if (question.trim()) {
+      handleSubmit(question);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && question.trim()) {
       handleSubmit(question);
@@ -142,8 +158,23 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
         onDismiss={onDismiss}
       >
         <div className='flex flex-col gap-3 p-4'>
+          {!isAuthenticated && (
+            <div className='alert alert-info py-2 text-xs'>
+              <FiLock className='h-4 w-4 shrink-0' />
+              <span>
+                {_('Login required')} - {_('Sign in to use AI Q&A features.')}
+              </span>
+              <button
+                className='btn btn-ghost btn-xs text-primary ml-auto'
+                onClick={() => setShowLogin(true)}
+              >
+                {_('Login')}
+              </button>
+            </div>
+          )}
+
           {/* Suggested questions */}
-          {!answer && !isLoading && !error && (
+          {isAuthenticated && !answer && !isLoading && !error && (
             <div className='flex flex-wrap gap-1.5'>
               {suggestedQuestions.map((suggestion, i) => (
                 <button
@@ -166,16 +197,17 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={_('Ask a question...')}
-                disabled={isLoading}
+                placeholder={isAuthenticated ? _('Ask a question...') : _('Login to ask...')}
+                disabled={!isAuthenticated || isLoading}
                 className={clsx(
                   'w-full flex-1 rounded-md p-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-0',
                   'not-eink:bg-gray-600 not-eink:text-white eink:border eink:border-base-content',
+                  !isAuthenticated && 'opacity-75',
                 )}
               />
               <button
                 onClick={() => handleSubmit(question)}
-                disabled={!question.trim() || isLoading}
+                disabled={!isAuthenticated || !question.trim() || isLoading}
                 className={clsx(
                   'btn btn-sm btn-ghost btn-primary text-blue-600',
                   'bg-transparent hover:bg-transparent disabled:bg-transparent',
@@ -186,16 +218,18 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
               </button>
             </div>
             {/* Expand Details Toggle */}
-            <label className='flex items-center gap-2 text-xs text-gray-400'>
-              <input
-                type='checkbox'
-                checked={expandDetails}
-                onChange={(e) => setExpandDetails(e.target.checked)}
-                disabled={isLoading}
-                className='checkbox checkbox-xs'
-              />
-              <span>{_('Expand details (more comprehensive answers)')}</span>
-            </label>
+            {isAuthenticated && (
+              <label className='flex items-center gap-2 text-xs text-gray-400'>
+                <input
+                  type='checkbox'
+                  checked={expandDetails}
+                  onChange={(e) => setExpandDetails(e.target.checked)}
+                  disabled={isLoading}
+                  className='checkbox checkbox-xs'
+                />
+                <span>{_('Expand details (more comprehensive answers)')}</span>
+              </label>
+            )}
           </div>
 
           {/* Error */}
@@ -216,6 +250,8 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
           )}
         </div>
       </Popup>
+
+      <SofusionLoginDialog isOpen={showLogin} onClose={() => setShowLogin(false)} onSuccess={handleLoginSuccess} />
     </div>
   );
 };

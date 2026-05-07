@@ -1,8 +1,9 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-import { FiPlus, FiBookOpen } from 'react-icons/fi';
+import { FiPlus, FiBookOpen, FiLock } from 'react-icons/fi';
 import { IoSparklesOutline } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSofusionAuthStore } from '@/store/sofusionAuthStore';
 import { listSeries, createSeries, type Series } from '@/services/sofusion/api';
 
 export interface SeriesSelection {
@@ -27,6 +28,7 @@ const SofusionSeriesSelector: React.FC<SofusionSeriesSelectorProps> = ({
   suggestedOrder,
 }) => {
   const _ = useTranslation();
+  const { isAuthenticated } = useSofusionAuthStore();
   const [seriesList, setSeriesList] = useState<Series[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateSeries, setShowCreateSeries] = useState(false);
@@ -34,18 +36,27 @@ const SofusionSeriesSelector: React.FC<SofusionSeriesSelectorProps> = ({
   const [newSeriesDescription, setNewSeriesDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadSeries();
-  }, []);
+    if (isAuthenticated) {
+      loadSeries();
+    } else {
+      setSeriesList([]);
+      setLoadError(null);
+    }
+  }, [isAuthenticated]);
 
   const loadSeries = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const series = await listSeries();
       setSeriesList(series);
     } catch (err) {
+      const message = err instanceof Error ? err.message : _('Failed to load series');
       console.error('Failed to load series:', err);
+      setLoadError(message);
     } finally {
       setIsLoading(false);
     }
@@ -105,14 +116,21 @@ const SofusionSeriesSelector: React.FC<SofusionSeriesSelectorProps> = ({
         <span className="text-sm font-medium">{_('Series (Optional)')}</span>
       </div>
 
+      {!isAuthenticated && (
+        <div className="alert alert-info py-2 text-xs">
+          <FiLock className="h-4 w-4 shrink-0" />
+          <span>{_('Login to manage series')}</span>
+        </div>
+      )}
+
       <div className="flex flex-col gap-2">
         <select
           value={value.seriesId ?? 'none'}
           onChange={handleSeriesChange}
-          disabled={disabled || isLoading}
+          disabled={!isAuthenticated || disabled || isLoading}
           className={clsx(
             'select select-bordered select-sm w-full',
-            disabled && 'select-disabled',
+            (!isAuthenticated || disabled || isLoading) && 'select-disabled',
           )}
         >
           <option value="none">{_('No Series (Standalone)')}</option>
@@ -130,13 +148,19 @@ const SofusionSeriesSelector: React.FC<SofusionSeriesSelectorProps> = ({
         <button
           type="button"
           onClick={() => setShowCreateSeries(!showCreateSeries)}
-          disabled={disabled}
+          disabled={!isAuthenticated || disabled}
           className="btn btn-ghost btn-xs w-fit gap-1 px-2 text-primary"
         >
           <FiPlus className="h-3 w-3" />
           {showCreateSeries ? _('Cancel') : _('Create New Series')}
         </button>
       </div>
+
+      {loadError && (
+        <div className="alert alert-warning py-2 text-xs">
+          <span>{loadError}</span>
+        </div>
+      )}
 
       {showCreateSeries && (
         <div className="bg-base-200 rounded-lg p-3">
