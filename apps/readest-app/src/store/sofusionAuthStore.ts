@@ -26,8 +26,8 @@ export const useSofusionAuthStore = create<SofusionAuthState>((set) => ({
           isAuthenticated: true,
           token,
           user: {
-            userId: payload.userId,
-            username: payload.sub || payload.username || 'User',
+            userId: payload.sub,
+            username: payload.username || 'User',
           },
         });
       } catch {
