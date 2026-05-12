@@ -59,6 +59,8 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const isInitiating = useRef(false);
+
+  const clearUploadError = () => setUploadError(null);
   const [loading, setLoading] = useState(false);
   const [errorLoading, setErrorLoading] = useState(false);
 
@@ -472,6 +474,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           onUpload={handleUploadBook}
           onSkip={handleSkipUpload}
           onDontAskAgain={handleDontAskAgain}
+          onClearError={clearUploadError}
         />
       )}
     </div>

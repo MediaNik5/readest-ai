@@ -1,4 +1,8 @@
+import { refreshToken as doRefreshToken } from '@/services/sofusion/auth';
+
 const REQUEST_TIMEOUT = 60_000; // 60 seconds
+
+let refreshPromise: Promise<unknown> | null = null;
 
 export const getSofusionBaseUrl = (): string => {
   const url = process.env['NEXT_PUBLIC_SOFUSION_API_URL'];
@@ -13,6 +17,45 @@ export const getSofusionBaseUrl = (): string => {
 const getAuthHeaders = (): Record<string, string> => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('sofusion_auth_token') : null;
   return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const fetchWithAuth = async (
+  input: RequestInfo | URL,
+  init?: RequestInit & { skipRefresh?: boolean },
+): Promise<Response> => {
+  // Omit skipRefresh when passing to fetch as it's not a valid fetch option
+  const { skipRefresh: _skipRefresh, ...fetchInit } = init || {};
+
+  let response = await fetch(input, {
+    ...fetchInit,
+    headers: { ...getAuthHeaders(), ...fetchInit?.headers },
+  });
+
+  // Handle 401/403 by trying to refresh the token
+  if ((response.status === 401 || response.status === 403) && !init?.skipRefresh) {
+    // Prevent multiple concurrent refresh attempts
+    if (!refreshPromise) {
+      refreshPromise = doRefreshToken().finally(() => {
+        refreshPromise = null;
+      });
+    }
+
+    try {
+      await refreshPromise;
+      // Retry the original request with new token
+      const { skipRefresh: _skipRefresh2, ...retryInit } = init || {};
+      response = await fetch(input, {
+        ...retryInit,
+        headers: { ...getAuthHeaders(), ...retryInit?.headers },
+      });
+    } catch {
+      // Refresh failed, tokens are already cleared by doRefreshToken
+      // The calling code should handle this by redirecting to login
+      throw new Error('Session expired. Please log in again.');
+    }
+  }
+
+  return response;
 };
 
 export interface BookUploadResponse {
@@ -92,9 +135,9 @@ export async function uploadBook(
 
   let response: Response;
   try {
-    response = await fetch(`${baseUrl}/api/books/upload`, {
+    response = await fetchWithAuth(`${baseUrl}/api/books/upload`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: {},
       body: formData,
       signal: controller.signal,
     });
@@ -103,6 +146,9 @@ export async function uploadBook(
     clearTimeout(timeoutId);
     if (err instanceof Error && err.name === 'AbortError') {
       throw new Error('Upload request timed out after 60 seconds');
+    }
+    if (err instanceof Error && err.message.includes('Session expired')) {
+      throw err;
     }
     const message = err instanceof TypeError ? err.message : String(err);
     throw new Error(
@@ -134,9 +180,9 @@ export async function askQuestion(bookId: number, request: AskRequest): Promise<
 
   let response: Response;
   try {
-    response = await fetch(`${baseUrl}/api/books/${bookId}/ask`, {
+    response = await fetchWithAuth(`${baseUrl}/api/books/${bookId}/ask`, {
       method: 'POST',
-      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
       signal: controller.signal,
     });
@@ -145,6 +191,9 @@ export async function askQuestion(bookId: number, request: AskRequest): Promise<
     clearTimeout(timeoutId);
     if (err instanceof Error && err.name === 'AbortError') {
       throw new Error('Request timed out after 60 seconds');
+    }
+    if (err instanceof Error && err.message.includes('Session expired')) {
+      throw err;
     }
     throw err;
   }
@@ -171,9 +220,9 @@ export async function listSeries(): Promise<Series[]> {
 
   let response: Response;
   try {
-    response = await fetch(`${baseUrl}/api/series`, {
+    response = await fetchWithAuth(`${baseUrl}/api/series`, {
       method: 'GET',
-      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -207,9 +256,9 @@ export async function createSeries(request: CreateSeriesRequest): Promise<Create
 
   let response: Response;
   try {
-    response = await fetch(`${baseUrl}/api/series`, {
+    response = await fetchWithAuth(`${baseUrl}/api/series`, {
       method: 'POST',
-      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
       signal: controller.signal,
     });
@@ -247,9 +296,9 @@ export async function updateBookSeries(
 
   let response: Response;
   try {
-    response = await fetch(`${baseUrl}/api/books/${bookId}/series`, {
+    response = await fetchWithAuth(`${baseUrl}/api/books/${bookId}/series`, {
       method: 'PUT',
-      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
       signal: controller.signal,
     });

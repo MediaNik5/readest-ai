@@ -9,5 +9,19 @@ export type {
   UpdateBookSeriesRequest,
 } from './api';
 
-export { login, register, logout, getAuthToken, setAuthToken, clearAuthToken, isAuthenticated } from './auth';
+export {
+  login,
+  register,
+  logout,
+  refreshToken,
+  checkAuth,
+  getAuthToken,
+  setAuthToken,
+  clearAuthToken,
+  getRefreshToken,
+  setRefreshToken,
+  clearRefreshToken,
+  clearAllTokens,
+  isAuthenticated,
+} from './auth';
 export type { AuthResponse, LoginRequest, RegisterRequest } from './auth';

@@ -12,6 +12,7 @@ const REQUEST_TIMEOUT = 30_000;
 
 export interface AuthResponse {
   token: string;
+  refreshToken: string;
   type: string;
   userId: number;
   username: string;
@@ -30,6 +31,7 @@ export interface RegisterRequest {
 }
 
 const STORAGE_KEY = 'sofusion_auth_token';
+const REFRESH_TOKEN_KEY = 'sofusion_refresh_token';
 
 export function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -44,6 +46,26 @@ export function setAuthToken(token: string): void {
 export function clearAuthToken(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(STORAGE_KEY);
+}
+
+export function getRefreshToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export function setRefreshToken(token: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(REFRESH_TOKEN_KEY, token);
+}
+
+export function clearRefreshToken(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+export function clearAllTokens(): void {
+  clearAuthToken();
+  clearRefreshToken();
 }
 
 export function isAuthenticated(): boolean {
@@ -89,6 +111,9 @@ export async function login(request: LoginRequest): Promise<AuthResponse> {
   if (result.token) {
     setAuthToken(result.token);
   }
+  if (result.refreshToken) {
+    setRefreshToken(result.refreshToken);
+  }
 
   return result;
 }
@@ -132,10 +157,100 @@ export async function register(request: RegisterRequest): Promise<AuthResponse> 
   if (result.token) {
     setAuthToken(result.token);
   }
+  if (result.refreshToken) {
+    setRefreshToken(result.refreshToken);
+  }
 
   return result;
 }
 
 export async function logout(): Promise<void> {
-  clearAuthToken();
+  const baseUrl = getSofusionBaseUrl();
+  const refreshToken = getRefreshToken();
+
+  if (refreshToken) {
+    try {
+      await fetch(`${baseUrl}/api/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+    } catch {
+      // Ignore logout errors, just clear tokens
+    }
+  }
+
+  clearAllTokens();
+}
+
+export async function refreshToken(): Promise<AuthResponse> {
+  const baseUrl = getSofusionBaseUrl();
+  const currentRefreshToken = getRefreshToken();
+
+  if (!currentRefreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: currentRefreshToken }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('Refresh token request timed out');
+    }
+    throw err;
+  }
+
+  if (!response.ok) {
+    // Refresh failed, clear tokens
+    clearAllTokens();
+    let errorMessage: string;
+    try {
+      const json = await response.json();
+      errorMessage = json.message ?? response.statusText;
+    } catch {
+      errorMessage = response.statusText;
+    }
+    throw new Error(`Token refresh failed: ${errorMessage}`);
+  }
+
+  const result: AuthResponse = await response.json();
+
+  if (result.token) {
+    setAuthToken(result.token);
+  }
+  if (result.refreshToken) {
+    setRefreshToken(result.refreshToken);
+  }
+
+  return result;
+}
+
+export async function checkAuth(): Promise<boolean> {
+  const baseUrl = getSofusionBaseUrl();
+  const token = getAuthToken();
+
+  if (!token) {
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${baseUrl}/api/auth/check`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }

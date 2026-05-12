@@ -4,27 +4,32 @@ import type { AuthResponse, LoginRequest, RegisterRequest } from '@/services/sof
 interface SofusionAuthState {
   isAuthenticated: boolean;
   token: string | null;
+  refreshToken: string | null;
   user: { userId: number; username: string } | null;
   login: (request: LoginRequest) => Promise<void>;
   register: (request: RegisterRequest) => Promise<void>;
   logout: () => void;
   initAuth: () => void;
+  clearSession: () => void;
 }
 
 export const useSofusionAuthStore = create<SofusionAuthState>((set) => ({
   isAuthenticated: false,
   token: null,
+  refreshToken: null,
   user: null,
 
   initAuth: () => {
     if (typeof window === 'undefined') return;
     const token = localStorage.getItem('sofusion_auth_token');
+    const refreshToken = localStorage.getItem('sofusion_refresh_token');
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]!));
         set({
           isAuthenticated: true,
           token,
+          refreshToken: refreshToken || null,
           user: {
             userId: payload.sub,
             username: payload.username || 'User',
@@ -32,6 +37,7 @@ export const useSofusionAuthStore = create<SofusionAuthState>((set) => ({
         });
       } catch {
         localStorage.removeItem('sofusion_auth_token');
+        localStorage.removeItem('sofusion_refresh_token');
       }
     }
   },
@@ -42,6 +48,7 @@ export const useSofusionAuthStore = create<SofusionAuthState>((set) => ({
     set({
       isAuthenticated: true,
       token: response.token,
+      refreshToken: response.refreshToken,
       user: {
         userId: response.userId,
         username: response.username,
@@ -55,6 +62,7 @@ export const useSofusionAuthStore = create<SofusionAuthState>((set) => ({
     set({
       isAuthenticated: true,
       token: response.token,
+      refreshToken: response.refreshToken,
       user: {
         userId: response.userId,
         username: response.username,
@@ -68,6 +76,18 @@ export const useSofusionAuthStore = create<SofusionAuthState>((set) => ({
     set({
       isAuthenticated: false,
       token: null,
+      refreshToken: null,
+      user: null,
+    });
+  },
+
+  clearSession: () => {
+    const { clearAllTokens } = require('@/services/sofusion/auth');
+    clearAllTokens();
+    set({
+      isAuthenticated: false,
+      token: null,
+      refreshToken: null,
       user: null,
     });
   },

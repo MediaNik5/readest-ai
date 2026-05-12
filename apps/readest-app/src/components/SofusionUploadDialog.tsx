@@ -15,6 +15,7 @@ interface SofusionUploadDialogProps {
   onUpload: (seriesSelection?: SeriesSelection) => void;
   onSkip: () => void;
   onDontAskAgain: () => void;
+  onClearError?: () => void;
   suggestedSeriesOrder?: number;
 }
 
@@ -25,15 +26,25 @@ const SofusionUploadDialog: React.FC<SofusionUploadDialogProps> = ({
   onUpload,
   onSkip,
   onDontAskAgain,
+  onClearError,
   suggestedSeriesOrder,
 }) => {
   const _ = useTranslation();
-  const { isAuthenticated } = useSofusionAuthStore();
+  const { isAuthenticated, clearSession } = useSofusionAuthStore();
   const [showLogin, setShowLogin] = useState(false);
   const [seriesSelection, setSeriesSelection] = useState<SeriesSelection>({
     seriesId: null,
     seriesOrder: suggestedSeriesOrder || null,
   });
+
+  // Handle session expiration errors
+  useEffect(() => {
+    if (error && error.includes('Session expired')) {
+      clearSession();
+      setShowLogin(true);
+      onClearError?.();
+    }
+  }, [error, clearSession, onClearError]);
 
   useEffect(() => {
     if (isAuthenticated && showLogin) {
