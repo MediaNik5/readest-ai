@@ -47,7 +47,7 @@ export const useSofusionAuthStore = create<SofusionAuthState>((set) => ({
     const response: AuthResponse = await login(request);
     set({
       isAuthenticated: true,
-      token: response.token,
+      token: response.accessToken,
       refreshToken: response.refreshToken,
       user: {
         userId: response.userId,
@@ -61,7 +61,7 @@ export const useSofusionAuthStore = create<SofusionAuthState>((set) => ({
     const response: AuthResponse = await register(request);
     set({
       isAuthenticated: true,
-      token: response.token,
+      token: response.accessToken,
       refreshToken: response.refreshToken,
       user: {
         userId: response.userId,

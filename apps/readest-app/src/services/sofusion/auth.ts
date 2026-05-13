@@ -11,7 +11,7 @@ const REQUEST_TIMEOUT = 30_000;
 // };
 
 export interface AuthResponse {
-  token: string;
+  accessToken: string;
   refreshToken: string;
   type: string;
   userId: number;
@@ -109,8 +109,8 @@ export async function login(request: LoginRequest): Promise<AuthResponse> {
 
   const result: AuthResponse = await response.json();
 
-  if (result.token) {
-    setAuthToken(result.token);
+  if (result.accessToken) {
+    setAuthToken(result.accessToken);
   }
   if (result.refreshToken) {
     setRefreshToken(result.refreshToken);
@@ -155,8 +155,8 @@ export async function register(request: RegisterRequest): Promise<AuthResponse> 
 
   const result: AuthResponse = await response.json();
 
-  if (result.token) {
-    setAuthToken(result.token);
+  if (result.accessToken) {
+    setAuthToken(result.accessToken);
   }
   if (result.refreshToken) {
     setRefreshToken(result.refreshToken);
@@ -227,8 +227,8 @@ export async function refreshToken(): Promise<AuthResponse> {
 
   const result: AuthResponse = await response.json();
 
-  if (result.token) {
-    setAuthToken(result.token);
+  if (result.accessToken) {
+    setAuthToken(result.accessToken);
   }
   if (result.refreshToken) {
     setRefreshToken(result.refreshToken);

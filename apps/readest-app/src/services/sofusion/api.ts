@@ -16,7 +16,7 @@ export const getSofusionBaseUrl = (): string => {
 
 const getAuthHeaders = (): Record<string, string> => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('sofusion_auth_token') : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return token ? { Authorization: `Bearer ${token}` } : { Authorization: 'none' };
 };
 
 const fetchWithAuth = async (
