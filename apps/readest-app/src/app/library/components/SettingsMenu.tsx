@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PiUserCircle, PiUserCircleCheck, PiGear } from 'react-icons/pi';
+import { PiUserCircle, PiUserCircleCheck, PiGear, PiSparkle } from 'react-icons/pi';
 import { PiSun, PiMoon } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdCloudSync, MdSync, MdSyncProblem } from 'react-icons/md';
@@ -16,6 +16,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useSofusionAuthStore } from '@/store/sofusionAuthStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
@@ -36,6 +37,7 @@ import Menu from '@/components/Menu';
 interface SettingsMenuProps {
   onPullLibrary: (fullRefresh?: boolean, verbose?: boolean) => void;
   setIsDropdownOpen?: (isOpen: boolean) => void;
+  onShowSofusionLoginDialog?: () => void;
 }
 
 interface Permissions {
@@ -43,11 +45,12 @@ interface Permissions {
   manageStorage: PermissionState;
 }
 
-const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdownOpen }) => {
+const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdownOpen, onShowSofusionLoginDialog }) => {
   const _ = useTranslation();
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
+  const { isAuthenticated: isSofusionAuthenticated, logout: sofusionLogout } = useSofusionAuthStore();
   const { userProfilePlan, quotas } = useQuotaStats(true);
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettingsDialogOpen } = useSettingsStore();
@@ -268,6 +271,16 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setIsDropdownOpen?.(false);
   };
 
+  const handleSofusionLogin = () => {
+    onShowSofusionLoginDialog?.();
+    setIsDropdownOpen?.(false);
+  };
+
+  const handleSofusionLogout = async () => {
+    await sofusionLogout();
+    setIsDropdownOpen?.(false);
+  };
+
   const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];
   const userFullName = user?.user_metadata?.['full_name'];
   const userDisplayName = userFullName ? userFullName.split(' ')[0] : null;
@@ -351,6 +364,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       ) : (
         <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
       )}
+
+      <MenuItem
+        label={isSofusionAuthenticated ? _('Logout from Sofusion') : _('Sign in to Sofusion')}
+        Icon={PiSparkle}
+        onClick={isSofusionAuthenticated ? handleSofusionLogout : handleSofusionLogin}
+      />
 
       <MenuItem
         label={_('Auto Upload Books to Cloud')}

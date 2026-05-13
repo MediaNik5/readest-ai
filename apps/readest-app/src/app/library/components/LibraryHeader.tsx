@@ -32,6 +32,7 @@ interface LibraryHeaderProps {
   onToggleSelectMode: () => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;
+  onShowSofusionLoginDialog?: () => void;
 }
 
 const LibraryHeader: React.FC<LibraryHeaderProps> = ({
@@ -44,6 +45,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   onToggleSelectMode,
   onSelectAll,
   onDeselectAll,
+  onShowSofusionLoginDialog,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -213,7 +215,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
               toggleButton={<MdOutlineMenu role='none' size={iconSize18} />}
             >
-              <SettingsMenu onPullLibrary={onPullLibrary} />
+              <SettingsMenu onPullLibrary={onPullLibrary} onShowSofusionLoginDialog={onShowSofusionLoginDialog} />
             </Dropdown>
             {appService?.hasWindowBar && (
               <WindowButtons

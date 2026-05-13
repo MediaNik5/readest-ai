@@ -81,6 +81,7 @@ import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
 import ModalPortal from '@/components/ModalPortal';
 import TransferQueuePanel from './components/TransferQueuePanel';
+import SofusionLoginDialog from '@/components/SofusionLoginDialog';
 
 const LibraryPageWithSearchParams = () => {
   const searchParams = useSearchParams();
@@ -115,6 +116,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [showCatalogManager, setShowCatalogManager] = useState(
     searchParams?.get('opds') === 'true',
   );
+  const [showSofusionLoginDialog, setShowSofusionLoginDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -403,6 +405,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   const handleShowOPDSDialog = () => {
     setShowCatalogManager(true);
+  };
+
+  const handleShowSofusionLoginDialog = () => {
+    setShowSofusionLoginDialog(true);
   };
 
   const handleDismissOPDSDialog = () => {
@@ -896,6 +902,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onToggleSelectMode={() => handleSetSelectMode(!isSelectMode)}
           onSelectAll={handleSelectAll}
           onDeselectAll={handleDeselectAll}
+          onShowSofusionLoginDialog={handleShowSofusionLoginDialog}
         />
         <progress
           aria-label={_('Library Sync Progress')}
@@ -1029,6 +1036,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <BackupWindow onPullLibrary={pullLibrary} />
       {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
       {showCatalogManager && <CatalogDialog onClose={handleDismissOPDSDialog} />}
+      <SofusionLoginDialog
+        isOpen={showSofusionLoginDialog}
+        onClose={() => setShowSofusionLoginDialog(false)}
+      />
       <Toast />
     </div>
   );

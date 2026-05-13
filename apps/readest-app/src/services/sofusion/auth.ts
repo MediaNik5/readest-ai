@@ -66,6 +66,7 @@ export function clearRefreshToken(): void {
 export function clearAllTokens(): void {
   clearAuthToken();
   clearRefreshToken();
+  localStorage.removeItem('sofusionUserId');
 }
 
 export function isAuthenticated(): boolean {
