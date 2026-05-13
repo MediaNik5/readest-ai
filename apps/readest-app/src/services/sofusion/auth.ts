@@ -188,7 +188,7 @@ export async function refreshToken(): Promise<AuthResponse> {
   const currentRefreshToken = getRefreshToken();
 
   if (!currentRefreshToken) {
-    throw new Error('No refresh token available');
+    throw new Error('Session expired: no refresh token');
   }
 
   const controller = new AbortController();
@@ -221,7 +221,7 @@ export async function refreshToken(): Promise<AuthResponse> {
     } catch {
       errorMessage = response.statusText;
     }
-    throw new Error(`Token refresh failed: ${errorMessage}`);
+    throw new Error(`Session expired: ${errorMessage}`);
   }
 
   const result: AuthResponse = await response.json();

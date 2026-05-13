@@ -11,8 +11,6 @@ import { Position, TextSelection } from '@/utils/sel';
 import Popup from '@/components/Popup';
 import SofusionLoginDialog from '@/components/SofusionLoginDialog';
 
-const SESSION_EXPIRED_MESSAGE = 'Session expired. Please log in again.';
-
 interface AskAIPopupProps {
   bookKey: string;
   selection?: TextSelection;
@@ -124,7 +122,7 @@ const AskAIPopup: React.FC<AskAIPopupProps> = ({
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to get answer';
-      if (message.includes('Session expired') || message === SESSION_EXPIRED_MESSAGE) {
+      if (message.includes('Session expired')) {
         // Session expired, show login dialog and clear auth state
         const { clearSession } = useSofusionAuthStore.getState();
         clearSession();

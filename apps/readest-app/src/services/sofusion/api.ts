@@ -192,9 +192,6 @@ export async function askQuestion(bookId: number, request: AskRequest): Promise<
     if (err instanceof Error && err.name === 'AbortError') {
       throw new Error('Request timed out after 60 seconds');
     }
-    if (err instanceof Error && err.message.includes('Session expired')) {
-      throw err;
-    }
     throw err;
   }
 
